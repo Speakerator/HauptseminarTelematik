@@ -1,0 +1,128 @@
+\documentclass{semdoc}
+\usepackage{lipsum} 
+\usepackage{xargs}                      % Use more than one optional parameter in a new commands
+\usepackage[pdftex,dvipsnames]{xcolor}  % Coloured text etc.
+
+
+%allow the use of the todo command 
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+\newcommandx{\unsure}[2][1=]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+\newcommandx{\change}[2][1=]{\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
+\newcommandx{\info}[2][1=]{\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
+\newcommandx{\improvement}[2][1=]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
+\newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
+
+%allow the use of the \cite{NEEDED} command
+\usepackage{ifthen}
+\let\oldcite=\cite
+\renewcommand\cite[1]{\ifthenelse{\equal{#1}{NEEDED}}{[citation~needed]}{\oldcite{#1}}}
+
+
+
+\docbegin
+
+\title{Recent Advances in Sandboxing}
+\author{Christoph Heidrich}
+\authorURL{christop.heidrich@tu-ilmenau.de}
+
+\maketitle
+% initial config
+\nocite{*}
+\begin{abstract}
+\{ Insert Abstract here\}
+\end{abstract}
+
+% --> Im Text sollte \section der "h�chste" Gliederungsbefehl sein,
+%     Bitte _neue_ Rechtschreibung verwenden!
+%     kein include, input newpage oder \\
+%
+%	  Auf Zeilenimbr�che alle 80 Zeichen achten
+%	  Rechtschreibung pr�fen!
+%     Men�: Edit -> Spell -> Select Deutsch8, dann Edit -> Spell -> Check Buffer)
+
+%\todo{The original todo note withouth changed colours.\newline Here's another line.}
+%\lipsum[11]\unsure{Is this correct?}\unsure{I'm unsure about also!}
+%\lipsum[11]\change{Change this!}
+%\lipsum[11]\info{This can help me in chapter seven!}
+%\lipsum[11]\improvement{This really needs to be improved!\newline\newline What was I thinking?!}
+%\thiswillnotshow{This is hidden since option `disable' is chosen!}
+%\improvement[inline]{The following section needs to be rewritten!}
+%\lipsum[11]
+%\newpage
+%\listoftodos[Notes]
+
+\section{Introduction}
+\label{tH02_Introduction}
+Paper Introduction
+
+\section{Overview Sandboxing}
+\label{tH02_Overview_Sandbox}
+Short Overview over the topic of sandboxing: explanation of general concepts, definition of status quo. Possibly pointing out current restrictions and weaknesses, which can be referenced in the following chapters.
+
+\section{Advances in OS-based sandboxing}
+\label{tH02_OS_based}
+\subsection{File-system layering on OS-level}
+One of the initially provided papers. Replication of the file system accessed by a sandboxed application not only allows the analysis and restriction of said possibly malicious program but in addition to that makes it possible to selectively commit changes to the real system. This introduces various new use-cases.
+
+As presented in chapter \ref{tH02_Overview_Sandbox}, sandboxing techniques offer a wide variety of helpful features regarding analysis and protection from malicious software. However, solutions focussing on isolating malware and protecting the host system usually completely prevent access to the hosts file system or only allow restricted access.\cite{NEEDED} Kim and Zeldovich have developed MBOX, a solution focussing on protecting the hosts' file system. Like similar solutions it offers protection from modification by malicious software and allows flexible control of the isolated program, but in addition also allows selective commits of the performed changes back to the original file system. This is achieved by intercepting on system calls performed by the sandboxed programm using seccomp/BFP and redirecting them to the simulated file system. Since the latter is stored in a regular directory, it can easily be examined using regular Unix tools.\cite{NEEDED}\todo{Impact on security? Escaping the directory and accessing the host?} This approach introduces various new use cases apart from the usual security related ones. For example, it allows non-root users to install system packages using the systems package managers. This process usually would require root privileges, but by installing said packages in a simulated file system where a root-like environment can be emulated by MBOX, it can also be performed by regular users. Other possible scenarios are the possibility to checkpoint the original file system and work on a copy by running a new sandboxed shell, e. g. while editing system configuration files. This is quite similar to the process of creating a new branch in versioning tools like GIT.\unsure{Vergleich treffend?} In case of a faulty configuration, which would otherwise corrupt the system, changes can simply be discarded by rolling back to the original file system while successful changes can easily be applied to the original.
+
+
+\subsection{Secure sandboxing despite bugs in memory save code}
+Extracting the standard libraries from one single trusted code based and isolating them from one another separated from the rest of the sandbox hinders exploitation of flaws present in those libraries and provides better isolation.
+\subsection{Save Loading}
+Replacing the standard application loader with a more security-focussed one and linking it with the sandbox to allow better fault isolation. This way, information about the application behaviour can be passed to the sandbox in advance of program execution.
+
+\section{Advances in web-based sandboxing}
+\label{tH02_Web_based}
+\subsection{Software-based fault isolation for dynamic runtime-environments}
+One of the initially provided papers. Introducing a method allowing effective software-based fault isolation and static code checks despite highly dynamic environments including just-in-time compilation and runtime code editing.
+\subsection{Type-based verification of Web-sandbox security}
+One of the initially provided papers. Introducing a method for a simplified functionality \& security verification of currently in development or new sandbox systems, based on codified qualities.
+\subsection{Real-time analysis of websites}
+Sandboxing entire websites to allow malware analysis even before the browser executes part of the code. (ADSandbox)
+
+\section{Sandboxes in mobile environments}
+\label{tH02_Mobile}
+\subsection{Maybe: short motivation for sandboxing mobile applications} 
+\subsection{Static and dynamic analysis of Android applications on Java- and kernel-level}
+\subsection{Sandbox-profiles for Apple iOS}
+Extending Apples native sandboxing concept by introducing sandbox profiles for different applications to improve individual security.
+
+
+\section{Advances regarding sandbox evasion}
+\label{tH02_Evasion}
+Note: the topics in this chapter and the supporting papers sound promising, however some of them might focus solely on malware detection rather than sandboxing techniques and will be discarded. The section about "`Transparent Sandboxing"' will then be inserted in chapter \ref{tH02_OS_based}.
+\subsection{Maybe: Shift of malware behaviour regarding sandbox detection}
+Addressing the question of how relevant (or not) the topic of sandbox detection and hence, measures against it are, regarding the shift in system architectures caused by the growing  availability of cloud-based / virtualized systems,
+\subsection{Transparent sandboxing for evasive malware}
+\subsection{Maybe: Sandbox-Evasion on mobile Systems}
+
+\section{R\'{e}sum\'{e} and Conclusion}
+\label{tH02_Conclusion}
+%%
+% F�r Flattersatz in Tabellenspalten:
+% \newcolumntype{z}{>{\PBS{\raggedright\hspace{0pt}}}p{5cm}}
+% statt p{5cm} einfach z verwenden, z.B. \begin{tabular}{|l||c|r|z|}
+% F�r graue Tabellenspalten (z.B. zentrierter Text):
+% \newcolumntype{g}{>{\columncolor[gray]{0.8}}c} % grau
+% \newcolumntype{G}{>{\columncolor[gray]{0.9}}c} % helleres grau
+% \begin{tabular}{|l||c|G|g|} oder auch \multicolumn{4}{|g|}{Eine ganze Zeile}
+% Aber Achtung: Im xdvi werden graue Zeilen nicht korrekt dargestellt, erst
+% im PostScript- oder PDF-Dokument bzw. Ghostview.
+%
+% /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ 
+% -----------------------------------------------------------------------------
+% Bitte keinen Text mehr unterhalb dieser Zeile eintragen!!
+% -----------------------------------------------------------------------------
+%
+% --> �blicherweise wird nur die Literatur aufgelistet, die auch referenziert
+%     wird. M�chte man auch nichtreferenzierte Literatur einschlie�en, so
+%     koennte man dies mit \nocite{<citelabel>} tun (ist jedoch schlechter
+%     Stil und soll daher hier nicht gemacht werden).
+%\nocite{*}
+%     In die folgende Zeile sollte die ben�tigte Literaturdatenbankdatei
+%     eingetragen werden (im Normalfall nicht zu �ndern):
+\bibliography{tH02_txt}
+%
+\docend
+%%% end of document

@@ -55,10 +55,14 @@ Paper Introduction
 
 \section{Overview Sandboxing}
 \label{tH02_Overview_Sandbox}
-Short Overview over the topic of sandboxing: explanation of general concepts, definition of status quo. Possibly pointing out current restrictions and weaknesses, which can be referenced in the following chapters
+%Short Overview over the topic of sandboxing: explanation of general concepts, definition of status quo. Possibly pointing out current restrictions and weaknesses, which can be referenced in the following chapters
 \todo[inline]{Sandboxing-Anwendung Isolation, Restriction for protection, but also behavioural analysis. Source for the necessity of sandboxing for malware analysis in advance of detection can be quoted from t02\_AASandbox. Signature Analysis and understanding of behaviour to allow future static analysis.}
 
-Before we go into detail regarding the latest progression regarding sandboxing technology this section will give a brief overview of the general concepts of said technology and define the status quo as a baseline for later reference. In general, sandboxes allow the execution of a possibly malicious program in a controlled and monitored environment. Traditional use cases are the protection of the host system from unwanted alteration during the execution of an unknown, possibly malicious program or the detailed analysis of said programs behaviour to identify and gain information about new and hence unknown malware. A common approaches to achieve this is either monitoring, altering or intercepting system calls from the sandboxed program, depending on the relevant use case. If the alteration of the host system is not prevented, usually an additional mechanism like an encapsulating virtual machine is used to allow easy restoration of the system to its initial state. The sandbox is used to isolate the application from the system and controls its execution\cite{t02_Hoopes}[p. 68f].
+Before we go into detail regarding the latest progression regarding sandboxing technology this section will give a brief overview of the general concepts of said technology and define the status quo as a baseline for later reference. In general, sandboxes allow the execution of a possibly malicious program in a controlled and monitored environment. Traditional use cases are the protection of the host system from unwanted alteration during the execution of an unknown, possibly malicious program or the detailed analysis of said programs behaviour to identify and gain information about new and hence unknown malware. A common approaches to achieve this is either monitoring, altering or intercepting system calls from the sandboxed program, depending on the relevant use case. 
+
+\todo[inline]{kurzer Absatz über Programming language based sandboxes oder Web Sandboxes bzw. die Verwendung von Sandboxes zur Isolation von Anwendungen untereinander, bspw. bei der Integration in eine Website. Kurze Einführung zur *Ubiquity* dieser findet sich in t02\_Cappos, Retaining Sanbdbox Containement despite bugs...}
+
+ If the alteration of the host system is not prevented, usually an additional mechanism like an encapsulating virtual machine is used to allow easy restoration of the system to its initial state. The sandbox is used to isolate the application from the system and controls its execution\cite{t02_Hoopes}[p. 68f].
 
 There are several criteria that determine the quality of a sandbox and its applicability to a certain use case. The most obvious one is the execution performance of the sandboxed application. Monitoring its behaviour as well as intercepting and sanitizing performed system calls introduces a significant overhead which can result in notably longer execution time. This is not only impractical from a users perspective but also allows modern malware to recognize the sandboxed environment and evade detection by displaying benign behaviour\cite{NEEDED}. Hence it should be as low as possible. Furthermore, if the sandbox is used to isolate the encapsulated program, alteration of the host system and the possibility of escaping the sandbox should obviously be non-existent. In addition to these core-principles also the already mentioned resistance to detection of the sandboxed environment as well as the visibility or accuracy of the enclosed program execution can be of significant interest, especially when the sandbox is used for the behavioural analysis of malware \cite{t02_Kruegel}[p. 1]. These criteria will be referenced in later chapters to evaluate introduced techniques.\todo{weitere Kriterien?}
 
@@ -69,7 +73,7 @@ There are several criteria that determine the quality of a sandbox and its appli
 \section{Advances in OS-based sandboxing}
 \label{tH02_OS_based}
 \subsection{File-system layering on OS-level}
-One of the initially provided papers. Replication of the file system accessed by a sandboxed application not only allows the analysis and restriction of said possibly malicious program but in addition to that makes it possible to selectively commit changes to the real system. This introduces various new use-cases.
+%One of the initially provided papers. Replication of the file system accessed by a sandboxed application not only allows the analysis and restriction of said possibly malicious program but in addition to that makes it possible to selectively commit changes to the real system. This introduces various new use-cases.
 
 As presented in chapter \ref{tH02_Overview_Sandbox}, sandboxes offer a variety of helpful features regarding analysis and protection from malicious software. However, solutions focussing on isolating malware and protecting the host system - in contrast of such focussed on malware analysis -  usually completely prevent access to the hosts file system or only allow restricted access\cite{NEEDED}. However, allowing alteration of the hosts file system (albeit while still assuring protection) can be interesting for a multitude of use cases. Though at first glance this might sound contradictory, Kim and Zeldovich have developed a method to allow this, introduced in their sandboxing solution MBOX. Like similar sandboxes it offers protection from modification by malicious software and allows flexible control of the isolated program. However, instead of prohibiting or restricting file system access, relevant system calls  are intercepted [[using \textit{seccomp/BPF}]] and redirected to a virtualized separate file system, controlled by the sandbox. 
 %This does not only effectively protect the host but also allows (selective) transfer of the performed changes back to the original file system.
@@ -84,16 +88,22 @@ This approach introduces various new use cases apart from the common security re
  
 \unsure[inline]{Naeher auf copy-on-write und TOCTOU Problematik eingehen}
 \todo[inline]{Bewertung und Kritik}
- 
- 
+  
  copy-on-write
  Concurrency Problematik
  Performance-improvements with Tracer
  
 
 
-\subsection{Secure sandboxing despite bugs in memory save code}
-Extracting the standard libraries from one single trusted code based and isolating them from one another separated from the rest of the sandbox hinders exploitation of flaws present in those libraries and provides better isolation.
+\subsection{Secure sandboxing despite bugs in memory-safe code}
+%Extracting the standard libraries from one single trusted code based and isolating them from one another separated from the rest of the sandbox hinders exploitation of flaws present in those libraries and provides better isolation.
+%t02_Cappos
+
+It is part of the general purpose of sandboxes - isolating possibly malicious software - that they play a crucial role for security in today's digital world. Consequently, flaws in the construction of a sandbox that allow the isolated application to escape pose a vital risk to security. However, due to the general architecture of modern sandboxes, being completely bug-free is hard to guarantee. In general, sandboxes consist of three different components: the sandboxed untrusted application code, the interpreter for the core language the sandbox is written in and a large amount of standard libraries. Parts of the latter are used to perform the critical operations that the sandbox restricts and mediates between the isolated application and the operating system and hence represents the trusted code base (TCB) of the application. Accordingly, parts of those libraries have to be written in native code to access system resources, but in accordance to existing best-practices, large parts of these libraries are written in memory-safe languages to increase security. However, according to \cite{NEEDED}\todo{Insert citation found in Cappos et al} also bugs in memory-safe code present a significant risk and possibly allow an attacker to escape the sandbox. Cappos et al. developed a sandbox technique to moderate the impact of such flaws by splitting the single TCB into multiple partitions of the standard libraries isolated from each other.
+
+
+
+
 \subsection{Save Loading}
 Replacing the standard application loader with a more security-focussed one and linking it with the sandbox to allow better fault isolation. This way, information about the application behaviour can be passed to the sandbox in advance of program execution.
 

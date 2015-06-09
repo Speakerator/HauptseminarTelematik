@@ -133,9 +133,10 @@ From a security point of view, TRuE introduces a safe foundation for the executi
 \section{Advances in web-based sandboxing}
 \label{tH02_Web_based}
 \subsection{Software-based fault isolation for dynamic runtime-environments}
+\label{tH02_dynamic_web_sandbox}
 %One of the initially provided papers. Introducing a method allowing effective software-based fault isolation and static code checks despite highly dynamic environments including just-in-time compilation and runtime code editing.
 
-Regarding the current growth in cloud computing, applications and services provided on the internet play an ever-increasing role. Nonetheless, web application remain pieces of untrusted software, often incorporating and combining functionality from various unknown, possibly unsafe sources. To make matters worse, the encapsulating environment - web browsers - are prone to security vulnerabilities, e.g. through unsecured plug-ins, hence making sandboxing a key requirement to add needed security in many contexts. This is often achieved through the use of dynamic languages like JavaScript, executed on complex language runtime platforms like the V8 JavaScript engine, providing security features for isolation as well as additional features for runtime code modification and just-in-time compilation to increase efficiency. These platforms however often rely on large amounts of native code libraries, which pose a major security risk due to possible flaws in their implementation. Thus, each such runtime platform, implementing its own security measures, poses as an additional target for attacks, as evidently demonstrated by the periodic reports about new successful exploits of web-based applications and known vulnerabilities \cite{t02_CVEDetails}.
+Regarding the growth in cloud computing, applications and services provided on the internet play an ever-increasing role. Websites often incorporate dynamic, untrusted content from various sources besides the purposeful code provided by the accessed site to augment their appearance and service. These external scripts run with the same privileges than the intended first-party code, making the website a worthwhile target for attacks.  The encapsulating runtime environment - web browsers - often allow customization and extensibility through plug-ins and hence offer various opportunities for exploitations. All of this makes sandboxing an essential necessity in this context, encapsulating and isolating applications and widgets from each other as well as mediating access to the resources provided by the browser \cite{t02_ADsafety}[p. 1]. The provided web applications are often written in dynamic languages like JavaScript, executed on complex language runtime platforms like the V8 JavaScript engine, that provide additional security features for isolation as well as additional functionality for runtime code modification and just-in-time compilation to increase efficiency. These platforms however often rely on large amounts of native code libraries, which pose a major security risk due to possible flaws in their implementation. Thus, each such runtime platform, implementing its own security measures, poses as an additional target for attacks, as evidently demonstrated by the periodic reports about new successful exploits of web-based applications and known vulnerabilities \cite{t02_CVEDetails}.
 %t02_Ansel
 
 Ansel and Marchenko aim to address this problem by presenting an extension for the Native Client Open-source project, which allows them to safely and efficiently sandbox entire dynamic language runtimes including their native code base while still supporting features like runtime code modification and just-in-time compilation. By encapsulating the entire dynamic execution environment, their solution allows independent sandboxing regardless of the language use for implementing the application and does not limit implementation options. The following sections will give a brief overview over the NaCl before detailing the design of the extension. The chapter will conclude with an evaluation and future prospects for the solution.
@@ -168,7 +169,16 @@ Language-independent software-based fault isolation, achieved through successful
 
 
 \subsection{Type-based verification of Web-sandbox security}
-<Work in progress>
+As it was already depicted in chapter \ref{tH02_dynamic_web_sandbox}, sandboxing plays an important role for the security of modern websites. But despite the presented possibility to enable JIT compilation and support arbitrary runtime environments, applications and widgets on the web face sandboxes with another, more fundamental challenge: JavaScript, which is often utilized for web applications, imposes high requirements on sandboxes due to its rich feature set and specific characteristics. Dynamic typecasting, the context-sensitive scope of variables and references as well as the lack of private fields and the possibility to easily modify and extend objects at runtime using \textit{prototype} lead to a multitude of problems that sandboxes for web-applications must address and make it near-impossible to verify applications using static checks but demand for more and more sophisticated methods of dynamic analysis. This leads to more advanced and complex sandbox implementations that likewise become harder to review. An independent team reviewed the Caja sandbox and stated that "[it is] hard to review [...] which hurts maintainability and security"\cite{t02_Caja}[p. 2] It was also found neither specification not documentation of the implementation were sufficient. Both these points of criticism outline a critical problem - the safety claimed by a sandbox solution becomes harder to verify with increasing complexity.
+
+
+ like the implicit type system, JavaScript provides various means of attack and make it hard to validate, demanding for more dynamic checks leading to sandboxes of increasing complexity
+
+
+JavaScript is hard to sandbox due to its rich functionality and characteristics like dynamic typing and the alternating scope of variables and references, lack of private fields, prototype fuinctionality etc. Leads to more complex sandboxes, which become increasingly hard to review, which means that their claim of provided safety is hard to verify. (Source: [4], Caja External Security Review) This does not only count for older implementations 
+
+
+
 %One of the initially provided papers. Introducing a method for a simplified functionality \& security verification of currently in development or new sandbox systems, based on codified qualities.
 
 
@@ -186,17 +196,18 @@ The majority of current solution for sandboxing, especially for the purpose of d
 Extending Apples native sandboxing concept by introducing sandbox profiles for different applications to improve individual security.
 
 
-%\section{Advances regarding sandbox evasion}
-%wird wohl gestrichen
-%\label{tH02_Evasion}
-%Note: the topics in this chapter and the supporting papers sound promising, however some of them might focus solely on malware detection rather %than sandboxing techniques and will be discarded. The section about "Transparent Sandboxing" will then be inserted in chapter \ref{tH02_OS_based}.
-%\subsection{Maybe: Shift of malware behaviour regarding sandbox detection}
-%Addressing the question of how relevant (or not) the topic of sandbox detection and hence, measures against it are, regarding the shift in system architectures caused by the growing availability of cloud-based / virtualized systems,
-%\subsection{Transparent sandboxing for evasive malware}
-%\subsection{Maybe: Sandbox-Evasion on mobile Systems}
-
 \section{R\'{e}sum\'{e} and Conclusion}
 \label{tH02_Conclusion}
+
+section{ToDo}
+  \begin{enumerate}
+     \item check if all abbreviations (especially JIT have been introduced and used in full length once
+     
+  \end{enumerate}
+Fertig formatiertes E
+
+
+
 %%
 % F�r Flattersatz in Tabellenspalten:
 % \newcolumntype{z}{>{\PBS{\raggedright\hspace{0pt}}}p{5cm}}

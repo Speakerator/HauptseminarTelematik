@@ -169,13 +169,36 @@ Language-independent software-based fault isolation, achieved through successful
 
 
 \subsection{Type-based verification of Web-sandbox security}
-As it was already depicted in chapter \ref{tH02_dynamic_web_sandbox}, sandboxing plays an important role for the security of modern websites. But despite the presented possibility to enable JIT compilation and support arbitrary runtime environments, applications and widgets on the web face sandboxes with another, more fundamental challenge: JavaScript, which is often utilized for web applications, imposes high requirements on sandboxes due to its rich feature set and specific characteristics. Dynamic typecasting, the context-sensitive scope of variables and references as well as the lack of private fields and the possibility to easily modify and extend objects at runtime using \textit{prototype} lead to a multitude of problems that sandboxes for web-applications must address and make it near-impossible to verify applications using static checks but demand for more and more sophisticated methods of dynamic analysis. This leads to more advanced and complex sandbox implementations that likewise become harder to review. An independent team reviewed the Caja sandbox and stated that "[it is] hard to review [...] which hurts maintainability and security"\cite{t02_Caja}[p. 2] It was also found neither specification not documentation of the implementation were sufficient. Both these points of criticism outline a critical problem - the safety claimed by a sandbox solution becomes harder to verify with increasing complexity.
+As it was already depicted in chapter \ref{tH02_dynamic_web_sandbox}, sandboxing plays an important role for the security of modern websites. But despite the presented possibility to enable JIT compilation and support arbitrary runtime environments, applications and widgets on the web face sandboxes with another, more fundamental challenge: JavaScript, which is often utilized for web applications, imposes high requirements on sandboxes due to its rich feature set and specific characteristics. Dynamic typecasting, the context-sensitive scope of variables and references as well as the lack of private fields and the possibility to easily modify and extend objects at runtime using \textit{prototype} lead to a multitude of problems that sandboxes for web-applications must address and make it near-impossible to verify applications using static checks but demand for more and more sophisticated methods of dynamic analysis. This results in more advanced and complex sandbox implementations, that likewise become harder to review. An independent team reviewed the Caja sandbox to evaluate its quality and stated that "[it is] hard to review [...] which hurts maintainability and security"\cite{t02_Caja}[p. 2]. It was also found neither specification nor documentation of the implementation were sufficient. Both these points of criticism outline a critical problem: the safety claimed by a sandbox solution becomes more and more difficult to verify with increasing complexity. In addition, this also makes it harder for users to determine whether a solution is implemented correctly and fits their aspired goal and use case\cite{t02_ADsafety}[p. 3]. 
+
+Politz et al. try to address this problem and present a strongly automated method for the verification of Java Script Sandboxes based on a novel type system which evaluates the sandboxes properties. They applied and verified their system to the AdSafe Sandbox. Before presenting their solution in more detail, aforementioned properties, which apply to a secure sandbox, shall be briefly presented. According to \cite{t02_ADsafety}, they list as follows:
+
+\begin{itshape}
+If the containing page does not augment built-in prototypes, and all embedded widgets pass JSLint, then:
+\begin{enumerate}
+     \item widgets cannot load new code at runtime, or cause ADsafe to load new code on their behalf;
+	 \item widgets cannot affect the DOM outside of their designated subtree;
+	 \item widgets cannot obtain direct references to DOM nodes; and
+	 \item multiple widgets on the same page cannot communicate.      
+  \end{enumerate}
+\end {itshape}
+
+The verification of a sandboxes using a type based approach yields a few benefits towards other approaches. First of all most developers are familiar with type systems, ensuring understanding of what the system says about their code, e.g. when not all properties are met. Secondly, verification based on predefined types is generally faster than evaluating a system via whole-program analysis. And finally, Politz et al. proof the soundness of their type system as part of their work, making it an effective tool for verification.
+
+The developed type system models the behaviour and restrictions of the components, which the sandbox interacts with and that enforce security: the sandboxed application, the browser including the programming language itself as well as the reference monitors or [[wie heißt das Wort in den Kapitel vorher?]]. Their type-based representation will be discussed in the following section.
+
+\begin{figure}[htb] 
+\centerline{\includegraphics*[width=0.5\textwidth]{img/widget_type.PNG}}
+\begin{center}
+\caption{The \protect \textit{Widget} type. \protect \cite{t02_ADsafety}}
+\end{center}
+\label{tH02_widget_type}
+\end{figure}
+
+Their is no specification of the structure of an application, that may be encapsulated in a sandbox. However, every sandbox expects to execute against application that passed its static code checks. In the case of ADsafe, static checks are performed using JSLint. Politz et al. therefore developed a type \textit{Widget} that regards the type and shape of any value or expression that is passed between the sandboxed application and the sandbox. It reflects the checks performed by JSLint and therefore allows or blacklists expressions. The entire specification for the type Widget is displayed in figure \ref{tH02_widget_type}.
 
 
- like the implicit type system, JavaScript provides various means of attack and make it hard to validate, demanding for more dynamic checks leading to sandboxes of increasing complexity
 
-
-JavaScript is hard to sandbox due to its rich functionality and characteristics like dynamic typing and the alternating scope of variables and references, lack of private fields, prototype fuinctionality etc. Leads to more complex sandboxes, which become increasingly hard to review, which means that their claim of provided safety is hard to verify. (Source: [4], Caja External Security Review) This does not only count for older implementations 
 
 
 
@@ -202,7 +225,8 @@ Extending Apples native sandboxing concept by introducing sandbox profiles for d
 section{ToDo}
   \begin{enumerate}
      \item check if all abbreviations (especially JIT have been introduced and used in full length once
-     
+     \item reference the contradiction between the definition of a 'safe sanbdox' in AdSafety and "Dynamic Sandboxing"
+	 
   \end{enumerate}
 Fertig formatiertes E
 

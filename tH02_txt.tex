@@ -171,7 +171,7 @@ Language-independent software-based fault isolation, achieved through successful
 \subsection{Type-based verification of Web-sandbox security}
 As it was already depicted in chapter \ref{tH02_dynamic_web_sandbox}, sandboxing plays an important role for the security of modern websites. But despite the presented possibility to enable JIT compilation and support arbitrary runtime environments, applications and widgets on the web face sandboxes with another, more fundamental challenge: JavaScript, which is often utilized for web applications, imposes high requirements on sandboxes due to its rich feature set and specific characteristics. Dynamic typecasting, the context-sensitive scope of variables and references as well as the lack of private fields and the possibility to easily modify and extend objects at runtime using \textit{prototype} lead to a multitude of problems that sandboxes for web-applications must address and make it near-impossible to verify applications using static checks but demand for more and more sophisticated methods of dynamic analysis. This results in more advanced and complex sandbox implementations, that likewise become harder to review. An independent team reviewed the Caja sandbox to evaluate its quality and stated that "[it is] hard to review [...] which hurts maintainability and security"\cite{t02_Caja}[p. 2]. It was also found neither specification nor documentation of the implementation were sufficient. Both these points of criticism outline a critical problem: the safety claimed by a sandbox solution becomes more and more difficult to verify with increasing complexity. In addition, this also makes it harder for users to determine whether a solution is implemented correctly and fits their aspired goal and use case\cite{t02_ADsafety}[p. 3]. 
 
-Politz et al. try to address this problem and present a strongly automated method for the verification of Java Script Sandboxes based on a novel type system which evaluates the sandboxes properties. They applied and verified their system to the AdSafe Sandbox. Before presenting their solution in more detail, aforementioned properties, which apply to a secure sandbox, shall be briefly presented. According to \cite{t02_ADsafety}, they list as follows:
+Politz et al. try to address this problem and developed a strongly automated method for the verification of sandbox safety, based on a novel type system that evaluates the sandboxes properties. They applied their system to the ADsafe Sandbox and used the resulting type model to evaluate its implementation. Before presenting their solution in more detail, aforementioned properties that were used to define a secure sandbox in the context of their work shall be briefly presented. According to \cite{t02_ADsafety}, they list as follows:
 
 \begin{itshape}
 If the containing page does not augment built-in prototypes, and all embedded widgets pass JSLint, then:
@@ -183,9 +183,9 @@ If the containing page does not augment built-in prototypes, and all embedded wi
   \end{enumerate}
 \end {itshape}
 
-The verification of a sandboxes using a type based approach yields a few benefits towards other approaches. First of all most developers are familiar with type systems, ensuring understanding of what the system says about their code, e.g. when not all properties are met. Secondly, verification based on predefined types is generally faster than evaluating a system via whole-program analysis. And finally, Politz et al. proof the soundness of their type system as part of their work, making it an effective tool for verification.
 
-The developed type system models the behaviour and restrictions of the components, which the sandbox interacts with and that enforce security: the sandboxed application, the browser including the programming language itself as well as the reference monitors or [[wie heißt das Wort in den Kapitel vorher?]]. Their type-based representation will be discussed in the following section.
+
+The developed type system models the behaviour and restrictions of the components that the sandbox interacts with: the sandboxed application itself as well as the web browser as the sandbox runtime including the programming language.  Their type-based representation will be discussed in the following section.
 
 \begin{figure}[htb] 
 \centerline{\includegraphics*[width=0.5\textwidth]{img/widget_type.PNG}}
@@ -195,10 +195,20 @@ The developed type system models the behaviour and restrictions of the component
 \label{tH02_widget_type}
 \end{figure}
 
-Their is no specification of the structure of an application, that may be encapsulated in a sandbox. However, every sandbox expects to execute against application that passed its static code checks. In the case of ADsafe, static checks are performed using JSLint. Politz et al. therefore developed a type \textit{Widget} that regards the type and shape of any value or expression that is passed between the sandboxed application and the sandbox. It reflects the checks performed by JSLint and therefore allows or blacklists expressions. The entire specification for the type Widget is displayed in figure \ref{tH02_widget_type}.
+Their is no specification of the structure of an application that may be encapsulated in a sandbox. However, every sandbox expects to execute against application that passed its static code checks. In the case of ADsafe, static checks are performed using JSLint. Politz et al. therefore specified a type \textit{Widget} that reflects said checks. It regards any type and shape of value or expression that is used by the application and may be passed to the sandbox. Corresponding to the check performed by JSLint, it restricts or blacklists certain expressions. The entire specification for the type Widget is displayed in figure \ref{tH02_widget_type}. In addition, the safe interaction of the sandbox with its own runtime environment as well as the handling of the many peculiarities of JavaScript need to be taken into account. The browser environment and all its provided methods for DOM access are represented similar to the widget type, either being forbidden (e.g. \textit{eval} and similar functions) or restricted (e.g. \textit{timeout}, which must not be called with strings as arguments or it behaves similar to \textit{eval})\cite{t02_ADsafety}[p. 4ff]. To avoid problems with any idiosyncrasies in the implementation of the sandbox during analysis, the authors furthermore used mechanisms provided by \cite{t02_Guha}, which transform regular JavaScipt applications to a subset of the JavaScript language called  $\lambda _{JS}$. $\lambda_{JS}$  programs behave equivalent to the original application, but implements them only by using the languages core semantics, which makes them easier and foremost consistent to analyse.
+
+The final type model with the \textit{Widget} type as its core was then used to verify the behaviour of the adsafe.js runtime library. It prove to be effective, since Politz et al. discovered several new bugs in ADsafe. However, there are some drawbacks of their solution that need mentioning. First of all, it was impossible to apply their verification approach to ADsafe without any refactoring of the runtime libraries. These were necessary because the library implemented programming patterns they were not able to verify with their type system\cite{t02_ADsafety}[p. 9]. Since their type system is destined to be universally applicable to any JS-based sandbox solution, these possible restrictions further increase the required effort to apply their solution to existing systems.
 
 
 
+*put this somewhere else*
+The verification of a sandboxes using a type based approach yields a few benefits towards other approaches. First of all most developers are familiar with type systems, ensuring understanding of what the system says about their code, e.g. when not all properties are met. Secondly, verification based on predefined types is generally faster than evaluating a system via whole-program analysis. And finally, Politz et al. proof the soundness of their type system as part of their work, making it an effective tool for verification.
+*put this somewhere else*
+
+still missing:
+benefits:
+automated testing, especially handy for frequently repeated testing e.g. when develloping an new sandbox, which is possible due to the short "runtime" 
+automation is less error prone and lesse expensive than review by a human
 
 
 

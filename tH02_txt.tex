@@ -213,7 +213,25 @@ Nonetheless, the verification of a sandbox on a type-based approach in general y
 
 
 \subsection{Real-time analysis of websites}
-Sandboxing entire websites to allow malware analysis even before the browser executes part of the code. (ADSandbox)
+Despite actually sandboxing possibly dangerous content on the web, there are infrastructure-based approaches to counter the spread of malware through infected websites. Systems like McAffee SiteAdvisor \cite{t02_McAffee} or Microsoft's SmartScreen \cite{t02_Microsoft} continuously analyse websites and classify them based on specialised heuristics. If a user accesses a website, an associated plug-in queries the systems database prior to navigation and redirects the user to a warning page, if the site is classified as malicious. Though this approach has its benefits, it suffers from some major disadvantages: first of all, upon every site access, the browser has to request the relevant information from  a remote database, causing overhead and dependence on a remote architecture. Secondly, since the systems analytic crawlers often only access a site once during the analysis, the chance for false negatives is quite high, if exploits do not execute on every visit. And finally and most important, the interval between two subsequent visits of the same site is very long, leading to inconsistencies in the database's information. But even daily visits (an impossible task regarding the amount of available websites) would leave a 24-hour time-frame for an attacker to infect a website which is listed as safe.
+
+Dewald et al. circumvent these issues and present a transparent solution that allows client-side real-time analysis of websites and allows detection of a wide range of exploits. At its core, it utilizes Mozilla's Spider Monkey JavaScript Engine to execute scripts retrieved from websites and extended it with a novel analysis framework which logs executed actions. Similar to most sandboxes, it implements methods for both static and dynamic analysis. Static analysis is performs common JavaScript code checks as well as an iFrame / same-origin analysis. The former implements several heuristics for detecting manipulation of an objects prototype or maleficent use of \textit{eval} or similar function. However, Dewald et al. discovered that many benign websites also use this functions, which is why this method is complemented with the dynamic analysis depicted later in this section. The latter inspects whether the web page contains suspicious iFrames that may be used by an attacker to compromise a website and load content from another website. An iFrame is considered suspicious when it is hidden, e.g. through size attributes equal to zero or a position outside of the visible area, and refers to a foreign domain \cite{t02_Dewald}[p. 3].
+
+solution:
+-client-side detection technique transparent to the user
+- general / able to detect wide range of exploits
+
+Components:
+- core: Mozilla Spider Monkey Java Script Engine to execute scripts + analysis framework which logs every action, which is afterwards analysed for malicious behaviour, both implemented in a single DLL
+- implemented as a Dynamic Link Library which is either called from a Browser Helper Object (BHO) for internet explorer uppon site access or from a wrapper executable, which allows analysis of multiple websites with a more detailed report.
+-standalone DLL makes it easier to develop similar plug-ins for other browsers (BHO only works with IE - similar to a plug-in, supported since version 4, has DOM access)
+- 
+
+
+Critic:
+- what happens with exploits that only trigger after xx seconds? Stalls analysis?
+
+
 
 \section{Sandboxes in mobile environments}
 \label{tH02_Mobile}

@@ -244,23 +244,23 @@ Dewald et al. performed evaluation of the presented work, but their results are 
 
 Taking into account that these results were achieved on a prototypic, unoptimized implementation, they do sound promising. Still, without further optimization, acceptance of the solution is highly questionable, since delays of several seconds won't ne accepted by users and are bound to increase, since modern websites increasingly rely on JavaScript\todo[inline]{source needed!} Possible future extensions integrating analysis methods for advanced obfuscation methods may improve the already acceptable results. The pattern based approach enables easy extensibility towards the detection of future exploits while the encapsulation of the system in a single Dynamic Link Library allows simple development of extensions for different browsers. Nonetheless, there are still open issues regarding the detection of the analysis and possible countermeasures like stalling or crashing the analysis process. Unfortunately, no subsequent work has been published to date.
 
-conclusion:
-Benefit:
-- implementation in a single DLL simplifies development of similar extensions for other browsers than IE
-- easy to extend by implementing additional patterns to identify new malware
-- client side implementation scales without problems
+%conclusion:
+%Benefit:
+%- implementation in a single DLL simplifies development of similar extensions for other browsers than IE
+%- easy to extend by implementing additional patterns to identify new malware
+%- client side implementation scales without problems
 
-ToDo:
-- optimized 
+%ToDo:
+%- optimized 
 
-Critic:
-- javaScript is on the rise, amount of javascript into websites increases.
-- what happens with exploits that only trigger after xx seconds? Stalls analysis?
+%Critic:
+%- javaScript is on the rise, amount of javascript into websites increases.
+%- what happens with exploits that only trigger after xx seconds? Stalls analysis?
  
 
-Components:
-- core: Mozilla Spider Monkey Java Script Engine to execute scripts + analysis framework which logs every action, which is afterwards analysed for malicious behaviour, both implemented in a single DLL
-- implemented as a Dynamic Link Library which is either called from a Browser Helper Object (BHO) for internet explorer upon site access or from a wrapper executable, which allows analysis of multiple websites with a more detailed report.
+%Components:
+%- core: Mozilla Spider Monkey Java Script Engine to execute scripts + analysis framework which logs every action, which is afterwards analysed for malicious behaviour, both implemented in a single DLL
+%- implemented as a Dynamic Link Library which is either called from a Browser Helper Object (BHO) for internet explorer upon site access or from a wrapper executable, which allows analysis of multiple websites with a more detailed report.
 
 
 

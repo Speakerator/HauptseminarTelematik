@@ -1,0 +1,321 @@
+\documentclass{semdoc}
+\usepackage{lipsum} 
+\usepackage{xargs}           % Use more than one optional parameter in a new commands
+\usepackage[pdftex,dvipsnames]{xcolor} % Coloured text etc.
+\usepackage{textcomp}
+\usepackage{listings}
+\usepackage{german}
+
+
+%allow the use of the todo command 
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+\newcommandx{\unsure}[2][1=]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+\newcommandx{\change}[2][1=]{\todo[linecolor=blue,backgroundcolor=blue!25,bordercolor=blue,#1]{#2}}
+\newcommandx{\info}[2][1=]{\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
+\newcommandx{\improvement}[2][1=]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
+\newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
+
+%allow the use of the \cite{NEEDED} command
+\usepackage{ifthen}
+\let\oldcite= \cite
+\renewcommand \cite[1]{\ifthenelse{\equal{#1}{NEEDED}}{[citation~needed]}{\oldcite{#1}}}
+
+
+
+\docbegin
+
+\title{Recent Advances in Sandboxing}
+\author{Christoph Heidrich}
+\authorURL{christop.heidrich@tu-ilmenau.de}
+
+\maketitle
+% initial config
+%\nocite{*}
+\begin{abstract}
+\{ Insert Abstract here\}
+\end{abstract}
+
+% --> Im Text sollte \section der "h�chste" Gliederungsbefehl sein,
+%   Bitte _neue_ Rechtschreibung verwenden!
+%   kein include, input newpage oder \\
+%
+%	 Auf Zeilenimbr�che alle 80 Zeichen achten
+%	 Rechtschreibung pr�fen!
+%   Men�: Edit -> Spell -> Select Deutsch8, dann Edit -> Spell -> Check Buffer)
+
+%\todo{The original todo note withouth changed colours.\newline Here's another line.}
+%\lipsum[11]\unsure{Is this correct?}\unsure{I'm unsure about also!}
+%\lipsum[11]\change{Change this!}
+%\lipsum[11]\info{This can help me in chapter seven!}
+%\lipsum[11]\improvement{This really needs to be improved!\newline\newline What was I thinking?!}
+%\thiswillnotshow{This is hidden since option `disable' is chosen!}
+%\improvement[inline]{The following section needs to be rewritten!}
+%\lipsum[11]
+%\newpage
+%\listoftodos[Notes]
+
+\section{Introduction \& Overview}
+\label{tH02_Overview_Sandbox}
+%Short Overview over the topic of sandboxing: explanation of general concepts, definition of status quo. Possibly pointing out current restrictions and weaknesses, which can be referenced in the following chapters
+
+%\todo[inline]{kernel-level vs user-level sandboxing?}
+%\todo[inline]{Sandboxing-Anwendung Isolation, Restriction for protection, but also behavioural analysis. Source for the necessity of sandboxing for malware analysis in advance of detection can be quoted from t02\_AASandbox. Signature Analysis and understanding of behaviour to allow future static analysis.}
+
+The process of "`sandboxing "', the isolation and confinement of software to a specifically defined and controlled area in general, has become a commonly acknowledged and widespread technique in various areas of application and isn't considered anything special or ground-breaking any more. Nonetheless there has still been some research and progress over the last few years which will be covered in detail in the following chapters. As "`recent advances "’, as described in the title, is considered anything published over the last 5 years, that is since 2010. This work does not raise any claim to completeness but can be considered as an overview over a vast topic, singling out interesting or innovative examples.
+
+Before we go into detail regarding the latest progressions, this section will give a brief overview of the general concepts of sandboxing technologies as a defined status quo suitable for later reference. Generally speaking, sandboxes allow the execution of code in a controlled and monitored environment. The main goal of a sandbox is to restrict a program to a (usually reduced) set of privileges and prevent it from escalating its permissions to a higher level \cite{t02_Cappos}[p. 2], e.g. achieving super user access for a local application or gaining local user level access from a web-based application \cite{t02_Payer}[p. 2]. 
+This also includes and targets the isolation and protection of individual sandboxed applications from one another, as applied for applications on mobile devices or multiple web-applications from various unknown sources incorporated into a single website. In addition to protecting the host system from unwanted access and alteration, sandboxes are also often used to analyse possibly malicious software and its behaviour to identify new, unknown malware and use the information for future malware detection \cite{t02_Hoopes}[p. 64]. A commonly followed approach to achieve this is Software-based fault isolation (SFI), a combination of static code analysis and safety checks performed at runtime. Prior to execution, the sandboxed code is analysed and checked for patterns of known malicious code segments as well as generally critical operations, allowing the application to access hardware- or operation-level functionality (e.g. executing system calls) or perform any kind of control flow transfer. These sections are injected with software guards, short, inline instruction sequences that allow the sandbox to perform safety checks on operations or sanitizing critical parameters at runtime to secure the integrity of the sandbox \cite{t02_Ansel}[p. 356]. If the sandbox is used to analyse the behavior of malicious software and the alteration of the host system is not prevented, usually an additional mechanism like an encapsulating virtual machine is used to allow easy restoration of the system to its initial state \cite{t02_Hoopes}[p. 68f].
+
+There are several criteria that determine the quality of a sandbox and its applicability to a certain use case. The most obvious one is the execution performance of the sandboxed application. Monitoring its behaviour as well as intercepting and sanitizing performed system calls introduces a significant overhead which can result in notably longer execution time. This is not only impractical from a users perspective but also allows modern malware to recognize the sandboxed environment and evade detection by displaying benign behaviour \cite{t02_Cappos}[p. 6f]. Hence it should be as low as possible. Furthermore, if the sandbox is used to isolate the encapsulated program, alteration of the host system and the possibility of escaping the sandbox should obviously be non-existent. In addition to these core-principles also the already mentioned resistance to detection of the sandboxed environment as well as the visibility or accuracy of the enclosed program execution can be of significant interest, especially when the sandbox is used for the behavioural analysis of malware \cite{t02_Kruegel}[p. 1]. These criteria will be referenced in later chapters to evaluate introduced techniques.
+
+%Cites
+% t02_Hoopes - Book, Virtualisation for Security
+%t02_Kruegel - Paper, Full System Emulation
+
+\section{Advances in OS-based sandboxing}
+\label{tH02_OS_based}
+\subsection{File-system layering on OS-level}
+
+As presented in chapter \ref{tH02_Overview_Sandbox}, sandboxes offer a variety of helpful features regarding analysis and protection from malicious software. However, solutions focussing on isolating malware and protecting the host system usually completely prevent access to the hosts file system or only allow very restricted access \cite{t02_Cappos}[p. 2]. Though it might sound contradictory at first, allowing alteration of the hosts file system (albeit while still assuring its protection) can be interesting for a multitude of use cases. Implemented in their sandboxing solution MBOX, Kim and Zeldovich have developed a method to realize this. Like similar sandboxes it offers protection from modification by malicious software and allows flexible control of the isolated program. However, instead of prohibiting or restricting file system access, relevant system calls are intercepted and redirected to a virtualized separate file system, controlled by the sandbox. 
+%This does not only effectively protect the host but also allows (selective) transfer of the performed changes back to the original file system.
+The simulated file system is stored as a regular directory and can be easily accessed and examined after the termination of the sandbox using regular Unix tools \cite{t02_TaesooKim}[p. 1].
+
+This approach introduces a variety of new use cases apart from the common security related ones. For example, it allows users without root-privileges to use the systems regular package managers to install software, a process that usually would require root privileges to access system directories. However, by installing said packages in a simulated file system provided by the sandbox, where a root-like environment can be emulated, it can also be performed by regular users. Other potential scenarios make use of the possibility to checkpoint the original file system, similar to the process of creating a new branch in versioning tools like GIT, e.g. while editing system configuration files. In case of a faulty setting, which would otherwise corrupt the system, changes can simply be discarded by rolling back to the original file system while successful changes can easily be applied. It even allows a profile-based sandboxing-approach where each sandboxed application is only provided with access to necessary files \cite{t02_TaesooKim}[p. 2].
+
+ 
+ MBox is implemented as an extension to \textit{strace}4.7, a Unix system utility for tracing system calls, which was modified to take advantage of the \textit{seccomp}\footnote{Secure Computing} / \textit{BPF}\footnote{Berkeley Packet Filter} mechanisms available since Linux 3.5. While running a process in \textit{seccomp} mode ultimately prohibits it from using more than a well-defined set of system calls, the extended support for BPF allows a more detailed examination of the calls in advance of their execution. This allows the interception of critical operations, e.g. those targeting file system access an enables MBox to sanitize them by rewriting arguments to point to the virtual file system. This allows a reduction in introduced overhead, since the BFP application only invokes MBox on relevant and not all system calls.
+% To avoid unnecessary overhead, this mechanism is not invoked every time the BFP application intercepts a system call. Instead, it triggers an event to a tracer, which itself uses \textit{ptrace} to manipulate the arguments.
+ If MBox is used on systems running a kernel older than 3.5 and seccomp / BFP is not available, it falls back to use solely \textit{strace}, which results in interception of all system calls performed by the application and hence a higher overhead \cite{t02_TaesooKim}[p. 4].
+ 
+ The introduction of a separate virtual file system leads to a variety of pitfalls when implementing the sandbox, two of which should be addressed here. The first regards the committal of changes performed on files in the virtual file system. MBox effectively implements a copy-on-write policy, which means that files are only duplicated to the sandbox file system once it tried to modify them, redirecting subsequent reads to the modified copy instead of the original. After the termination of the sandbox, the original file may have been altered by another program, possibly requiring a merge of both files. MBox can detect such conflicts by storing a hash value of the original file while creating the copy and comparing it prior to the commit. However, it is unable to automatically solve them and they have to be addressed manually by the user \cite{t02_TaesooKim}[p. 3]. The second issue regards the common TOCTOU\footnote{time-of-check-time-of-use}-problem, describing the approach of overwriting the memory addressed by arguments that have essentially been checked, sanitized and proven to be benign with harmful operations from another thread. MBox avoids this problem by making use of the possibility to write any sanitized argument or data structure to read-only memory page using \textit{ptrace} and changing the affected system calls pointer to this copy. If the necessary system call to alter said memory page is invoked by a sandboxed process, it is automatically killed by the sandbox, effectively preventing any attacker from exploiting TOCTOU-issues. \cite{t02_TaesooKim}[p. 4]
+ 
+ The performance overhead introduced by MBox is highly dependent on the nature of the sandboxed application. Whereas sandboxing applications running mostly in user space (tested with Octave Benchmark) introduced only a minor overhead of 0.1\%, applications relying heavily on system calls, e.g. for file access(tested with Zip and Untar operations), lead to a more significant overhead of 12 - 21.9\% \cite{t02_TaesooKim}[p. 4]. Generally speaking, Kim and Zeldovich developed an interesting solution enabling a range of new applications. However, it should be noted that the solution of storing the virtualized file system as a conventional data structure may pose a viable security risk, enabling an attacker to introduce malicious files onto the hosts system, that are accessed and executed after the sandbox is terminated.
+
+
+\subsection{Secure sandboxing despite bugs in memory-safe code}
+%Extracting the standard libraries from one single trusted code based and isolating them from one another separated from the rest of the sandbox hinders exploitation of flaws present in those libraries and provides better isolation.
+%t02_Cappos
+
+It's in the general purpose of sandboxes - isolating possibly malicious software - that they play a crucial role for security in many of today's digital applications. Consequently, flaws in the construction of a sandbox, that allow the isolated application to escape, pose a vital risk to security. However, due to the general architecture of modern sandboxes, being completely bug-free is hard to guarantee. In general, sandboxes consist of three different components: the sandboxed untrusted application code, the interpreter for the core language the sandbox is written in and a large amount of standard libraries, which provide the general functionality. Parts of the latter are used to perform the critical operations that the sandbox restricts and mediates between the isolated application and the operating system and represent the trusted code base (TCB) of the sandbox. Accordingly, parts of those libraries contain operations written in native code to access system resources. In accordance to security-related best-practices however, large parts of these libraries are written in memory-safe languages to increase security\footnote{programming languages are classified as being memory safe when they avoid vulnerabilities based on the exploitation of bugs in system memory access, e.g. through the exploitation of dangling pointers, buffer overflows or type casting. Languages like JavaScript classified as memory-safe, C or C++ are not\cite{t02_Szekeres}} \cite{t02_Cappos}[p. 1]. However, according to \cite{t02_Dean}, even bugs in memory-safe code present a significant risk and possibly allow an attacker to escape the sandbox.
+
+This shall be briefly illustrated at the example of the Java Sandbox, a technically secure memory-safe language. Java applications are not allowed to call native code directly, which is enforced by different components of the sandbox. Instead, this functionality is implemented as part of the standard libraries. The sensitive functions are classified as private and cannot be accessed directly as well, but instead are called through public wrapper functions that mediate and verify access and enforce a security policy. These sensitive functions however do pose a major security risk. Since Java libraries are organized as packages, objects may contain both privileged and unprivileged code as well as data members extending the scope to other files, effectively interlinking many packages. If any part of the large trusted code base is flawed, untrusted code may directly access sensitive native functions and hence undermines overall security \cite{t02_Cappos}[p. 2f].
+
+To address this problem, Cappos et al. developed a sandbox technique that moderates the impact of a security failure in a standard library, implemented in a custom language subset of Python. They archived this by splitting the traditional monolithic TCB into multiple parts and moving as much functionality as possible out of the kernel into separate libraries. The sandbox itself is organised as a stack of isolated "´security layers"’, each with a set of security-verified capabilities that allows controlled interaction. Each is instantiated by the layer beneath it, passing along at most a subset of its own capabilities, with the kernel at the bottom of the stack. Since it keeps control over all its descendants, only a vulnerability in the kernel itself can compromise the sandbox in its entirety - otherwise a flaw in a layer may only affects its children.
+
+This security layer design is implemented based on two mechanisms. First of all, two calls to a \textit{virtual namespace} provided by the customized kernel allow the validation and execution of dynamically added code at runtime to load the split-up libraries. The mandatory capability mapping provided with the execution of the executing call ensures that the namespace does not contain any capability that wasn't explicitly granted. However, this does not enforce isolation between the libraries. This is ensured by the \textit{encasement library} which implements the layer abstraction between the libraries and is located right above the kernel in the architecture. To avoid shared objects or functions between the layers, only copies, created by the encasement library are passed between them. So called \textit{contracts} detail the capabilities of each layer and are used to filter and verify function calls that can be called by other layers, which are itself wrapped inside a verification function by the encasement library. If I violation is detected, the sandboxed program is terminated \cite{t02_Cappos}[p. 4].
+
+To provide functionality similar to other sandboxes while still maintaining the benefits from isolation, the kernel implements various capabilities spanning network functions, I/O calls, locking mechanisms as well as thread- and encryption-related calls that are provided to the untrusted layers building upon it. Using these, the authors built standard libraries providing common language functionality for their Python derivative while following the isolation paradigm \cite{t02_Cappos}[p. 5].
+
+To evaluate the benefit of isolating the libraries and excluding them from the trusted code base, Cappos et al. analysed the impact of 30 known bugs of the Java Virtual Machine and compared how they would affect program execution, if the flawed components were translated and isolated in their sandbox as isolated libraries. Since this evaluation is only of qualitative nature and highly subjective, each bug and its impact was also independently categorized by three additional authors. It was found that a minimum of 75\% of the applicable bugs that lead to the execution of arbitrary code in the JVM could have been prevented. As with other sandbox implementations, impact on performance is considered as an additional factor for evaluation. Initializing security layers as well as encapsulating communication between them through the encasement library adds to the execution time. However, since these values only range from one to two-digit milliseconds they were found to be acceptable if not negligible. Despite execution time each security layer also adds a memory overhead needed for the contracts, wrappers as well as the duplication of passed arguments. On a system with a 64-bit memory address each layer consumed an additional 19kb of memory, which should be more than acceptable - even for the most limited and lightweight devices \cite{t02_Cappos}[p. 6f]. Nonetheless, though marking an interesting an promising approach, these results should be taken with a grain of salt, since the conducted evaluation is still quite questionable despite best efforts. However, if future work confirms this approach, sandboxing in general may vastly improve. 
+
+
+\subsection{Safe Loading}
+\label{safe_loading}
+%Replacing the standard application loader with a more security-focussed one and linking it with the sandbox to allow better fault isolation. This way, information about the application behaviour can be passed to the sandbox in advance of program execution.
+
+Modern applications are no isolated constructs only relying on their own resources, but make use of many shared objects like additional libraries loaded at runtime. Because of this, one of the key components of many systems is the dynamic loader. It resolves these dependencies, replaces references in the applications code accordingly, and loads the application as well as required shared objects into memory before the application is started. These loaders usually are optimized for fast resolving and loading of said dependencies and often offer additional functionality for debugging or tracing purposes. However, this richness in functionality and the fact that all application, regardless of their scope or possible security aspects, make use of the same loader classifies them as a prominent target for attacks\footnote{the presented solution focusses on Unix-like environments, the idea however is applicable to other contexts as well}. The fact that it has to deal with additional problems when used in a security related context only worsen the case even more. When loading a privileged program, the aforementioned additional features prove to be rather obstructive or even harmful, since they could be abused to preload alternative, possible harmful libraries. Effectively, the loader should ensure that these functions are especially not available when an application is started with higher privileges (e.g. by using the SUID\footnote{'Set owner User ID', enables a user to execute a file with the owners permission instead of his own\cite{t02_Kumar}} flag), but there are many reported cases where faulty or missing checks lead to privilege escalation, which were abused to execute injected or construct malicious code with the provided higher privileges. Additionally, when used in combination with a sandbox that uses the loaders LD\_PRELOAD option to inject libraries into the application to gain control over it, the dynamic loader treats the sandboxes injected binary translator similar to any other loaded object, 
+%\todo[inline]{explain what a binary translator is and does in chapter 2!. Sources on Page 21}
+which enables the sandboxed application to access information about it. Another critical point is, that it is not guaranteed that the  initialisation function of the binary translator (which effectively takes and ensures control over the application) is the first instruction to be executed by the loader. If any other library sets an "`INITFIRST"’ flag, the injected library is \textit{loaded} prioritized, yet the loader \textit{executes} the last library that was loaded with this flag set, which possibly enables the application to circumvent the sandbox. And finally, many existing sandbox implementations either do not support dynamic loading or treat the loader as a black box residing next to the sandboxed application\footnote{see \cite{t02_Scott} and \cite{t02_Yee} for reference}, allowing it to load and map new code into the running process \cite{t02_Payer}[p. 21f]. Albeit probably sanitized and controlled by the sandbox through injected code guards, this unnecessarily increases the encapsulated applications capabilities.
+
+\begin{figure}[htb] 
+\centerline{\includegraphics*[width=0.5\textwidth]{img/safeLoading.png}}
+\begin{center}
+\caption{Comparison between a regular sanboxing approach and the safe loading architecture provided by TRuE \protect \cite{t02_Payer}}
+\end{center}
+\label{tH02_img_safe_load_arch}
+\end{figure}
+
+Payer et al. try to address these problems by introducing a trusted runtime environment (TRuE), that combines a customized "`safe"’ loader and a sandbox within the same domain to provide a protected foundation for application execution. In contrast to a conventional sandbox, where the standard loader itself, the application and all required libraries are placed within the sandbox, TRuE positions both in the same privileged domain while the untrusted application code as well as all additionally required libraries reside in a lower-privileged and controlled application domain. This allows a tighter coupling of the former two components and allows them to share information about the sandboxed program(see Fig. \ref{tH02_img_safe_load_arch} for comparison). The resource addresses resolved by the loader during application initialization can be embedded directly into the translated and sanitized code by the sandbox resulting in all control transfers during execution being direct references of the respective libraries, unreadable and unalterable by the application. Since the loader is aware of the status of the sandbox, this also resolves the problem of packages being load prior to the initialization of the sandbox as discussed earlier in this chapter \cite{t02_Payer}[p. 23]. Furthermore, since the loader and the application no longer reside in the same domain, the application is no longer able to map additional executable code into memory directly. Instead, the safe loader is the only component allowed to load additional code. It is still accessible from the application domain, however only through a well-defined API tightly controlled by the sandbox \cite{t02_Payer}[p. 22]. 
+
+The sandbox domain itself acts similar to many known sandbox implementations. The untrusted application code as well as all external resources are inspected prior to execution and injected with security guards to ensure sandbox containment. System calls are intercepted and sanitized prior to execution and due to the tight coupling unresolved targets for control flow transfers are loaded and verified dynamically. Indirect control flow transfers are checked before they are carried out to ensure only verified and sandboxed resources are reached.
+The design of the secure loader itself helps avoiding the problems related to weaknesses in regular application loaders presented beforehand. Placing the loader within the sandbox domain, separated from the application already efficiently prevents it from accessing and possibly exploiting its internals and functionality while providing the loader with the necessary privileges to resolve dependencies. To prevent privilege escalation attacks when dealing with applications using the SUID flag, the secure loader only implements a subset of the native functionality. The set is complete enough to allow resolution and loading of required resources but skips any functionality targeting debugging, execution of user provided code, backwards compatibility or direct access to the loaders internal data structure from the application. In addition, settings of the secure loader are all hard-coded and configuration files can only be changed prior to compilation, alteration through the user at runtime is not allowed. When the execution of the application is initiated by the user, the initialisation of the secure loader is the first command that is run. Since this initializes and starts the sandbox, interception by the application is prohibited and it is started directly under the control of the sandbox \cite{t02_Payer}[p. 23].
+
+Similar to the other presented solutions, this one is also evaluated regarding its performance overhead as well as its practicability. Tests were performed with synthetic benchmarks as well as real world applications. While in most benchmarks using the TRuE resulted in a reasonable overhead of almost 0\% to 8\%, tests that incurred a high number of indirect control flow transfers - which triggered a runtime check by the sandbox introduced a very noticeable overhead of up to 85\% in runtime. Test with a real world application\footnote{Open Office 3.2.1} however, that makes heavy use of shared resources introduced a severe overhead of 188\% due to the high number of references that need to be resolved. Even though this was performed by the authors to reflect a worst case scenario, it still represents a probable use case and depicts how gravely performance might be impacted \cite{t02_Payer}[p. 29].
+
+From a security point of view, TRuE introduces a safe foundation for the execution of untrusted applications that overcomes many of the problems of the standard application loader and introduces various benefits through the combination of a sandbox and a secure loader compared to independent usage. However, the applied approach limits the solution in its flexibility. Since the application domain is not allowed to introduce additional code on its on as it cannot be differentiated from malicious injected code, applications that make use of just-in-time compilation are not supported. However, this could be addressed in future work by introducing a JIT compiler to the sandbox domain or extending the Sandbox API to allow checks of introduced code. An additional point for criticism also regarding flexibility is that stripping down the functionality set provided by the loader may make the solution unsuitable for an unknown number of use cases requiring these capabilities. However, since the authors declared goal was to provide a solution with a "`rigorous security concept"’ \cite{t02_Payer}[p. 18], criticism of such kind may not be appropriate.
+
+\section{Advances in web-based sandboxing}
+\label{tH02_Web_based}
+\subsection{Software-based fault isolation for dynamic runtime-environments}
+\label{tH02_dynamic_web_sandbox}
+%One of the initially provided papers. Introducing a method allowing effective software-based fault isolation and static code checks despite highly dynamic environments including just-in-time compilation and runtime code editing.
+
+Regarding the growth in cloud computing, applications and services provided on the internet play an ever-increasing role. Websites often incorporate dynamic, untrusted content from various sources besides the purposeful code provided by the accessed site to augment their appearance and service. These external scripts run with the same privileges than the intended first-party code, making the website a worthwhile target for attacks.  The encapsulating runtime environment - web browsers - often allow customization and extensibility through plug-ins and hence offer various opportunities for exploitations. All of this makes sandboxing an essential necessity in this context, encapsulating and isolating applications and widgets from each other as well as mediating access to the resources provided by the browser \cite{t02_ADsafety}[p. 1]. The provided web applications are often written in dynamic languages like JavaScript, executed on complex language runtime platforms like the V8 JavaScript engine, that provide additional security features for isolation as well as additional functionality for runtime code modification and just-in-time compilation to increase efficiency. These platforms however often rely on large amounts of native code libraries, which pose a major security risk due to possible flaws in their implementation. Thus, each such runtime platform, implementing its own security measures, poses as an additional target for attacks, as evidently demonstrated by the periodic reports about new successful exploits of web-based applications and known vulnerabilities \cite{t02_CVEDetails}.
+%t02_Ansel
+
+Ansel and Marchenko aim to address this problem by presenting an extension for the Native Client Open-source project, which allows them to safely and efficiently sandbox entire dynamic language runtimes including their native code base while still supporting features like runtime code modification and just-in-time compilation. By encapsulating the entire dynamic execution environment, their solution allows independent sandboxing regardless of the language use for implementing the application and does not limit implementation options. The following sections will give a brief overview over the NaCl before detailing the design of the extension. The chapter will conclude with an evaluation and future prospects for the solution.
+
+The Native Client (NaCl) is an open-source sandbox implementation for x86 and ARM architectures that uses software-based fault isolation (SFI) to restrict the execution of unsafe code by combining static code analysis and dynamic surveillance of its execution using runtime safety checks. Both methods are performed on pre-compiled machine code. The static analysis verifies that the code complies to given criteria and constrains its execution where necessary. Injected software guards allow surveillance of the code during its execution and may be used to sanitize critical operations and passed parameters, e.g. verifying memory addresses while performing system calls to point to sandbox controlled memory regions. The sandboxed machine code is organized and encapsulated in in instruction bundles, each comprising a single possibly unsafe instruction combined with a software guard. Multiple instruction bundles are combined to a code region, each of which is independently verified for safety by the native client \cite{t02_Ansel}[356f].
+The presented NaCl-extension allows the application of these SFI techniques to code generated and modified at runtime, e.g. when using a runtime platform making use of just-in-time compilation. To do so, three interfaces were added to the NaCl implementation to allow dynamic addition, modification and deletion of such code regions. Their design will be briefly discussed in the following section.
+
+To add a new code region to the sandboxed application, the JIT compiler - which already resides within the sandbox as a part of the runtime platform - generates the new machine code and calls the respective interface, transferring control to the sandbox. It encapsulated each instruction and aligns it to its boundaries. Multiple of these instruction bundles are combined to a single code region, which are independently verified that control flow transfers between them solely target the start of instruction bundles to avoid circumvention of the encapsulation. To avoid code execution before a complete code region has been copied to executable memory, the first byte of each contained instruction bundle is written as a HLT\footnote{"`halt"’} instruction as long as copying is in progress, resulting in immediate termination of all threads of the native client when executed. Their intended value is written as the final step of the copying progress. The interface for safe modification of existing code regions at runtime is implemented in a similar way, though in addition atomicity of the modification progress has to be ensured. Any NaCl thread should only be able to execute either the old or new set of instructions. This is achieved by using the regular atomic write operation provided by the systems processor. However, this operation is limited to 8 byte memory region on some processors. To allow conflict-free modification of larger regions, memory synchronisation barriers are used, ensuring the integrity of the modification process. Since the size of the memory space addressable by the Native Client is set at link time, deletion of dynamically generated code regions is also supported to reclaim the executable memory once specific regions are no longer needed. To assure the safety of the process and maintaining the integrity of the sandbox some factors have to be taken into account: First, it has to be ensured that the code region has been created dynamically to avoid alteration of the platform itself. Secondly no thread currently should be executing the to-be-deleted code region or have its instruction-pointer point at the respective memory address. The latter is ensured by marking the relevant code region for deletion but prohibiting its reuse until each thread has invoked the Native Clients trusted runtime, effectively ensuring that no thread is in the critical code section \cite{t02_Ansel}[358 - 360].
+
+Similar to the already presented solutions, Ansel and Marchenko likewise tested their implementation with regards to performance and introduced overhead. Before their findings are discussed in more detail however, one particular shortcoming of their solution shall be addressed. The targeted language independence of their solution comes with the burden of adapting the runtime platform - more specific the JIT compiler - to emit code that can be safely sandboxed within the Native Client and matches its code safety verification. This adds additional effort for each supported language and platform since their compilers usually differ between architectures. The following performance results were measured on the 32 and 64-bit implementations of the V8 JavaScript engine and Mono Common Language Runtime for C\#, manually ported by the authors to operate within the Native Client. Differences regarding integer representation between the 32- and 64-bit implementation of the Native Client required alternate implementations of the respective platforms resulting in the performance numbers of the 64-bit version to be notably higher. This may be addressed in a future version of the presented work. JavaScript performance was measured using the V8 JavaScript Benchmark Suite as well as the Sunspider Benchmark, resulting in an average overhead of 30\% (32-bit) respectively 55,5\% (64-bit). For Mono, performance was tested using the SciMark C\# benchmark suite, resulting in an overhead of only 2\% for 32-bit and 21\% for 64-bit.
+
+\begin{figure}[htb] 
+\centerline{\includegraphics*[width=0.5\textwidth]{img/JIT_vs_AOT.PNG}}
+\begin{center}
+\caption{Absolute performance of SciMark C/C\# Benchmark Suite, native execution, pre-compiled (AOT) and JIT as well as sandbox slowdown in parentheses. \protect \cite{t02_Ansel}}
+\end{center}
+\label{tH02_AOT_vs_JIT}
+\end{figure}
+% \cite{t02_Ansel}
+
+However, the innovative benefit of the presented extension is to allow sandboxing of JIT-compiled code. To evaluate the relative cost of sandboxing pre-compiled native code versus JIT compiled code, Ansel and Marchenko compared the performance of three variations of the SciMark benchmark: as a native C implementation, as a C\# port compiled ahead of time and the and lastly as the same port executed using JIT compilation, both running on the Mono CLI and implemented as a 32-bit and 64-bit variant. Executed without the sandbox, the JIT compiled version of the port is faster than its pre-compiled counterpart since it can optimize the code as it is generated. Remarkably, this still holds true when executed within the native client. However, both executions were notably slower than the native run without a language framework. These results suggest, that the overhead introduced by language-independent sandboxing may be negligible compared to the slowdown induced by the dynamic language runtime itself(see Fig. \ref{tH02_AOT_vs_JIT}).\cite{t02_Ansel}[362ff]
+
+Language-independent software-based fault isolation, achieved through successfully sandboxing entire runtime environments makes it possible to safely run programs using self-modifying code with a noticeable but reasonable overhead. Since the presented extension does not rely on characteristics specific to the utilized Native Client, the general idea is very likely also applicable to other sandboxing solutions. Despite the obvious benefits from enabling the secure sandboxing of applications making use of self-modifying code, the solution may alos be beneficial for application and language deployment on the web in general. By enabling an entire language runtime to be isolated within a sandbox, this gravely facilitates the adoption and applications of new languages on the web. Such language may offer a richer, specifically needed functionality but weaker security due to its immaturity - which can now easily be suspended by running it in a safe environment. Nonetheless, the additional expenditure of aligning the runtime environment to run within the sandbox or porting existing ones is a drawback that definitely has to be accounted for.
+
+%Conlcusion:
+%- general idea can be applied to different sandboxes other than NaCl since their work is not based on specific NaCl characteristics but fundamental characteristics fulfilled by many other
+%- combination of SFI and JIT / dynamic code generation is possible, though there is a performance impact.
+%- new use case for language independent sandboxing: facilitate the deployment of new languages on the web (possibly weaker security but richer, specific feature set) by sandboxing it with its entire runtime.
+%- however comes with the disadvantage of enabling the runtime to emit sandboxable code.
+
+
+\subsection{Type-based verification of Web-sandbox security}
+As it was already depicted in chapter \ref{tH02_dynamic_web_sandbox}, sandboxing plays an important role for the security of modern websites. But despite the presented possibility to enable JIT compilation and support arbitrary runtime environments, applications and widgets on the web face sandboxes with another, more fundamental challenge: JavaScript, which is often utilized for web applications, imposes high requirements on sandboxes due to its rich feature set and specific characteristics. Dynamic typecasting, the context-sensitive scope of variables and references as well as the lack of private fields and the possibility to easily modify and extend objects at runtime using \textit{prototype} lead to a multitude of problems that sandboxes for web-applications must address and make it near-impossible to verify applications using static checks but demand for more and more sophisticated methods of dynamic analysis. This results in more advanced and complex sandbox implementations, that likewise become harder to review. An independent team reviewed the Caja sandbox to evaluate its quality and stated that "`[it is] hard to review [...] which hurts maintainability and security"’\cite{t02_Caja}[p. 2]. It was also found neither specification nor documentation of the implementation were sufficient. Both these points of criticism outline a critical problem: the safety claimed by a sandbox solution becomes more and more difficult to verify with increasing complexity. In addition, this also makes it harder for users to determine whether a solution is implemented correctly and fits their aspired goal and use case\cite{t02_ADsafety}[p. 3]. 
+
+Politz et al. try to address this problem and developed a strongly automated method for the verification of sandbox safety, based on a novel type system that evaluates the sandboxes properties. They applied their system to the ADsafe Sandbox and used the resulting type model to evaluate its implementation. Before presenting their solution in more detail, aforementioned properties that were used to define a secure sandbox in the context of their work shall be briefly presented. According to \cite{t02_ADsafety}, they list as follows:
+
+\begin{itshape}
+If the containing page does not augment built-in prototypes, and all embedded widgets pass JSLint, then:
+\begin{enumerate}
+     \item widgets cannot load new code at runtime, or cause ADsafe to load new code on their behalf;
+	 \item widgets cannot affect the DOM outside of their designated subtree;
+	 \item widgets cannot obtain direct references to DOM nodes; and
+	 \item multiple widgets on the same page cannot communicate.      
+  \end{enumerate}
+\end {itshape}
+
+
+
+The developed type system models the behaviour and restrictions of the components that the sandbox interacts with: the sandboxed application itself as well as the web browser as the sandbox runtime including the programming language.  Their type-based representation will be discussed in the following section.
+
+\begin{figure}[htb] 
+\centerline{\includegraphics*[width=0.5\textwidth]{img/widget_type.PNG}}
+\begin{center}
+\caption{The \protect \textit{Widget} type. \protect \cite{t02_ADsafety}}
+\end{center}
+\label{tH02_widget_type}
+\end{figure}
+
+Their is no specification of the structure of an application that may be encapsulated in a sandbox. However, every sandbox expects to execute against application that passed its static code checks. In the case of ADsafe, static checks are performed using JSLint. Politz et al. therefore specified a type \textit{Widget} that reflects said checks. It regards any type and shape of value or expression that is used by the application and may be passed to the sandbox. Corresponding to the check performed by JSLint, it restricts or blacklists certain expressions. The entire specification for the type Widget is displayed in figure \ref{tH02_widget_type}. In addition, the safe interaction of the sandbox with its own runtime environment as well as the handling of the many peculiarities of JavaScript need to be taken into account. The browser environment and all its provided methods for DOM access are represented similar to the widget type, either being forbidden (e.g. \textit{eval} and similar functions) or restricted (e.g. \textit{timeout}, which must not be called with strings as arguments or it behaves similar to \textit{eval})\cite{t02_ADsafety}[p. 4ff]. To avoid problems with any idiosyncrasies in the implementation of the sandbox during analysis, the authors furthermore used mechanisms provided by \cite{t02_Guha}, which transform regular JavaScipt applications to a subset of the JavaScript language called  $\lambda _{JS}$. $\lambda_{JS}$  programs behave equivalent to the original application, but implements them only by using the languages core semantics, which makes them easier and foremost consistent to analyse.
+
+The presented type model with the \textit{Widget} type at its core was then used to verify the behaviour of the adsafe.js runtime library which resulted in Politz et al. to discover several new bugs in ADsafe. However, there are some drawbacks of their solution that need mentioning. It was impossible to apply their verification approach to ADsafe without any refactoring of the runtime libraries, since they implemented programming patterns they were not able to verify with their type system\cite{t02_ADsafety}[p. 9]. Since the type system is intended to be universally applicable to any JS-based sandbox solution, this would not only require the implementation of new types similar to \textit{Widget} to represent checked applications for the sandbox, but further increase the required effort to refactor these constructs.
+
+Nonetheless, the verification of a sandbox on a type-based approach in general yields a few benefit.First of all most developers are familiar with type systems, ensuring understanding of what the system says about their code, e.g. when not all properties are met. Secondly, verification based on predefined types is generally faster than evaluating a system via whole-program analysis. And finally, Politz et al. proof the soundness of their type system as part of their work, making it an effective tool for verification \cite{t02_ADsafety}[p. 4]. However, the main benefit of their solution may not even lie in the verification of existing systems, but supporting and simplifying the development of new ones. By formally specifying the properties of the sandboxed application as well as the systems environment, developers can use the presented type system to design their systems with its safety and integrity in mind right from the beginning \cite{t02_ADsafety}[p. 13]. The approach benefits a tight development cycle since tests are automated and can be easily repeated in short intervals. 
+
+
+
+%benefits:
+%automated testing, especially handy for frequently repeated testing e.g. when develloping an new sandbox, which is possible due to the short "`runtime"’  DONE
+%automation is less error prone and lesse expensive than review by a human 
+
+
+
+%One of the initially provided papers. Introducing a method for a simplified functionality \& security verification of currently in development or new sandbox systems, based on codified qualities.
+
+
+\subsection{Real-time analysis of websites}
+Despite actually sandboxing possibly dangerous content on the web, there are infrastructure-based approaches to counter the spread of malware through infected websites. Systems like McAffee SiteAdvisor \cite{t02_McAffee} or Microsoft's SmartScreen \cite{t02_Microsoft} continuously analyse websites and classify them based on specialised heuristics. If a user accesses a website, an associated plug-in queries the systems database prior to navigation and redirects the user to a warning page, if the site is classified as malicious. Though this approach has its benefits, it suffers from some major disadvantages: first of all, upon every site access, the browser has to request the relevant information from  a remote database, causing overhead and dependence on a remote architecture. Secondly, since the systems analytic crawlers often only access a site once during the analysis, the chance for false negatives is quite high, if exploits do not execute on every visit. And finally and most important, the interval between two subsequent visits of the same site is very long, leading to inconsistencies in the database's information. But even daily visits (an impossible task regarding the amount of available websites) would leave a 24-hour time-frame for an attacker to infect a website which is listed as safe.
+
+Dewald et al. circumvent these issues and present a transparent solution that allows client-side real-time analysis of websites and allows detection of a wide range of exploits. At its core, they utilize Mozilla's Spider Monkey JavaScript Engine to execute scripts retrieved from websites and extended it with a novel analysis framework which logs executed actions. Similar to most sandboxes, it implements methods for both static and dynamic analysis. Static analysis performs common JavaScript code checks as well as an iFrame / same-origin analysis. The former implements several heuristics for detecting manipulation of an object's prototype or maleficent use of \textit{eval} or similar functions. However, Dewald et al. discovered that many benign websites also use this functions, which is why this method is complemented by the dynamic analysis depicted later in this section \cite{t02_Dewald}[p. 5]. The second static analysis inspects whether the web page contains suspicious iFrames that may be used by an attacker to compromise a website and load content from another source. An iFrame is considered suspicious when it is hidden, e.g. through size attributes equal to zero or a position outside of the visible area, and refers to a foreign domain \cite{t02_Dewald}[p. 3].
+
+
+Since many malign scripts use various, often nested obfuscation techniques to avoid detection through static analysis, the authors also integrated a method for dynamic code analysis. After the suspicious code has been extracted, it is encapsulated in a JavaScriptExecution object, which is then run in an SpiderMonkey instance. SpiderMonkey itself has been modified to recognize access to any JS object and log the performed operation. After execution has finished, the resulting log is searched for patterns that match typical behaviour of malicious software, e.g. saving code to a file and executing it using the "`run"’ command. An illustration of such a log is depicted in Fig. \ref{tH02_sample_log}. These patterns currently allow the detection of seven attacks including cookie stealing, file downloads and heap-spraying-attacks among others \cite{t02_Dewald}[p. 3].
+
+\begin{figure}[htb] 
+\lstset{ 
+  basicstyle=\footnotesize,
+  xleftmargin=.3\textwidth, xrightmargin=.2\textwidth
+}
+\begin{lstlisting}[language=Java]
+ADD global.mystring
+SET global.mystring TO "`sometext"’
+GET global.alert
+GET global.mystring
+CONVERT alert TO A FUNCTION
+FUNCTIONCALL alert ("`sometext"’)
+\end{lstlisting}
+\caption{Log for the program "`\protect\lstinline{var mystring = "`sometext"’; alert(mystring);}"’. \protect \cite{t02_Dewald}}
+\label{tH02_sample_log}
+\end{figure}
+
+Dewald et al. performed evaluation of the presented work, but their results are quite ambiguous. They tested the effectiveness of their system in terms of false positives by checking the entry page of the top 1000 websites from Alexa.com and received zero suspicions. They concluded a false positive rate of 0\%. \todo[inline]{extend this}. False negative tests were performed on 140 potentially malicious websites which were selected through the use of honeypots as well as code extracted from malware construction kits. 78\% of these samples were flagged as malicious. Of the remaining 62, multiple redirected to broke sites that possibly used to host an exploit, others did not contain an exploit at all. However, five samples performed a check on active browser plu-ins before executing the exploit and were able to avoid detection, since browser behaviour cannot yet be emulated. Another four samples used the DOM-tree structure to obfuscate the script, a method that could not be detected. During analysis of additional 10 samples, errors in the script caused it to fail, leading to an overall false negative rate of 6.43 or 13.57\%, depending on whether the ones causing the process to crash are considered possibly malicious. As an additional criteria, introduced overhead for the analysis is considered. To avoid possible distortions, only time relevant to the analysis, not for downloading the source, is considered. The checks introduced an average additional processing time of 2.112 seconds with a standard deviation of 4.292 seconds. Regarding the cumulative distribution, 90\% of all analysed pages took less than 5.1 seconds. It should be noted however, that the maximum processing time for a site heavily relying on JavaScript exceeded 60 seconds \cite{t02_Dewald}[p. 4f].
+
+Taking into account that these results were achieved on a prototypic, unoptimized implementation, they do sound promising. Still, without further optimization, acceptance of the solution is highly questionable, since delays of several seconds won't ne accepted by users and are bound to increase, since modern websites increasingly rely on JavaScript\todo[inline]{source needed!} Possible future extensions integrating analysis methods for advanced obfuscation methods may improve the already acceptable results. The pattern based approach enables easy extensibility towards the detection of future exploits while the encapsulation of the system in a single Dynamic Link Library allows simple development of extensions for different browsers. Nonetheless, there are still open issues regarding the detection of the analysis and possible countermeasures like stalling or crashing the analysis process. Unfortunately, no subsequent work has been published to date.
+
+%conclusion:
+%Benefit:
+%- implementation in a single DLL simplifies development of similar extensions for other browsers than IE
+%- easy to extend by implementing additional patterns to identify new malware
+%- client side implementation scales without problems
+
+%ToDo:
+%- optimized 
+
+%Critic:
+%- javaScript is on the rise, amount of javascript into websites increases.
+%- what happens with exploits that only trigger after xx seconds? Stalls analysis?
+ 
+
+%Components:
+%- core: Mozilla Spider Monkey Java Script Engine to execute scripts + analysis framework which logs every action, which is afterwards analysed for malicious behaviour, both implemented in a single DLL
+%- implemented as a Dynamic Link Library which is either called from a Browser Helper Object (BHO) for internet explorer upon site access or from a wrapper executable, which allows analysis of multiple websites with a more detailed report.
+
+
+
+
+
+
+\section{Sandboxes in mobile environments}
+\label{tH02_Mobile}
+\subsection{Relevance of sandboxing for mobile applications}
+The majority of current solution for sandboxing, especially for the purpose of dynamic malware analysis, are available for commodity desktop or server operating systems due to their longer availability and omnipresent application \cite{NEEDED}. With the rise of smartphones and other mobile devices and other mobile devices over last decade however, mobile operating systems like Google's Android and Apples iOS have become widely adopted. Due to their high popularity, people all over the world use them for a wide variety of tasks, ranging from cellular and web-based communication to security-critic actions like online banking. This, combined with the fact that many applications store personal and sensitive data locally on these phones and that it is possible to bill their owner, e.g. by calling premium numbers makes these devices prone to attacks by malicious software. Estimated numbers of 718 000 harmful applications as of 2013 \cite{t02_TrendLabs} suggest that especially on the open-source android platform, which allows software to be installed from various sources, an effective mechanism to identify malicious software is key. Regarding the ever-growing amount of mobile applications the need for an effective, automated malware analysis tool to provide the necessary behavioural footprint and classification for mobile malware-detection becomes evident. However, due to differences between conventional and mobile operating systems and limitation of device capabilities, many tried and tested solutions are not applicable \cite{NEEDED}. Luckily over the last few years sandboxing solutions tailored to the needs of the mobile environment have emerged. The following chapters will present some, implementing innovative functionality or novel approaches, in more detail.
+
+\subsection{Static and dynamic analysis of Android applications on Java- and kernel-level}
+\subsection{Sandbox-profiles for Apple iOS}
+\label{tH02_SandboxProfiles}
+Extending Apples native sandboxing concept by introducing sandbox profiles for different applications to improve individual security.
+
+
+\section{R\'{e}sum\'{e} and Conclusion}
+\label{tH02_Conclusion}
+
+section{ToDo}
+  \begin{enumerate}
+     \item check if all abbreviations (especially JIT have been introduced and used in full length once
+     \item reference the contradiction between the definition of a 'safe sanbdox' in AdSafety and "`Dynamic Sandboxing"’
+	 
+  \end{enumerate}
+Fertig formatiertes E
+
+
+
+%%
+% F�r Flattersatz in Tabellenspalten:
+% \newcolumntype{z}{>{\PBS{\raggedright\hspace{0pt}}}p{5cm}}
+% statt p{5cm} einfach z verwenden, z.B. \begin{tabular}{|l||c|r|z|}
+% F�r graue Tabellenspalten (z.B. zentrierter Text):
+% \newcolumntype{g}{>{\columncolor[gray]{0.8}}c} % grau
+% \newcolumntype{G}{>{\columncolor[gray]{0.9}}c} % helleres grau
+% \begin{tabular}{|l||c|G|g|} oder auch \multicolumn{4}{|g|}{Eine ganze Zeile}
+% Aber Achtung: Im xdvi werden graue Zeilen nicht korrekt dargestellt, erst
+% im PostScript- oder PDF-Dokument bzw. Ghostview.
+%
+% /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ 
+% -----------------------------------------------------------------------------
+% Bitte keinen Text mehr unterhalb dieser Zeile eintragen!!
+% -----------------------------------------------------------------------------
+%
+% --> �blicherweise wird nur die Literatur aufgelistet, die auch referenziert
+%   wird. M�chte man auch nichtreferenzierte Literatur einschlie�en, so
+%   koennte man dies mit \nocite{<citelabel>} tun (ist jedoch schlechter
+%   Stil und soll daher hier nicht gemacht werden).
+%\nocite{*}
+%   In die folgende Zeile sollte die ben�tigte Literaturdatenbankdatei
+%   eingetragen werden (im Normalfall nicht zu �ndern):
+\bibliography{tH02_txt}
+%
+\docend
+%%% end of document

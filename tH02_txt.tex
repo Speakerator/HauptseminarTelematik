@@ -313,11 +313,18 @@ Since in this case, the presented sandboxing system is not used to encapsulate a
 
 %Performance has to be measured differently
 
-\subsection{Sandbox-profiles for Apple iOS}
+\subsection{Sandboxing on Apple iOS}
 \label{tH02_SandboxProfiles}
--closed system im contrast to android, tightly regulated by apple. However even though the security policy might appear rigorous at first glance...
-Extending Apples native sandboxing concept by introducing sandbox profiles for different applications to improve individual security.
+%t02_Werthmann
 
+In comparison to the open-source Android operating system, security related research, evaluation as well as extension or improvement of the basic security features is a lot more complex on the closed-source Apple iOS system. This proprietary approach in combination with only a single legitimate app store impede the development and deployment of malicious applications, since all provided applications must adhere to certain guidelines and pass a review performed by Apple, before they can be distributed that way. Nonetheless there were some reported cases of malware attacks successfully performed on the iOS system, especially such regarding access and theft of private and sensitive information --- despite the fact that iOS deploys and runs every application in its own sandbox, similar to Android. Yet these exploits were possible, since Apple used to Apply generic sandbox profiles to any third party application, effectively granting it permission to access contact information, photos, location data, recent web searches and device information. This motivated  Werthman et al. to develop PSiOS, a solution to enforce an individual custom sandbox profile for every third party application, which could be configured by the user. At the time of publication of said work, in 2013, the current version of iOS --- iOS6 --- only supported certain application entitlements, that were granted by its developer to confine the application to a set of privileges, so their solution brought a significant benefit. \cite{t02_Werthmann}[p. 1f] It was also tested towards the already presented criteria and proved to performant enough for everyday use and successfully prevented Spyphone, an application developed specifically to extract sensitive information from iOS devices, from extracting information. It was also successfully applied to popular applications like Facebook, WhatsApp and Instagram (among others). The main drawback of the solution is that it requires a ``jailbroken'' device, which means that certain security and system restrictions are removed. This is necessary to allow PSiOS to modify a single environmental variable  and install a shared library that can access the encapsulated application's code at runtime. This requirement drastically restricts the applicability of the solution, since many users will not be willing to modify there devices. (XXXXXXXXXXXVOIDED WARRANTY??XXXXXXXXXXXX) In addition, a jailbreak itself weakens the devices security and prohibits it form applying any new patches, further increasing security risk. And finally, Apple introduced its own tool for application-specific permissions with iOS 7 in September 2013, only shortly after the release of this work. Nonetheless, their work should be represented in this work, but won't be discussed in more detail. sources!
+
+%http://www.howtogeek.com/177711/ios-has-app-permissions-too-and-theyre-arguably-better-than-androids/
+%http://www.howtogeek.com/211623/how-to-manage-app-permissions-on-your-iphone-or-ipad/
+%https://www.google.de/webhp?sourceid=chrome-instant&ion=1&espv=2&es_th=1&ie=UTF-8#safe=off&q=ios+jailbreak+security+risks
+%http://www.makeuseof.com/tag/4-compelling-security-reasons-jailbreak-iphone-ipad/
+%https://de.wikipedia.org/wiki/Apple_iOS
+%https://en.wikipedia.org/wiki/IOS_jailbreaking
 
 \section{R\'{e}sum\'{e} and Conclusion}
 \label{tH02_Conclusion}
